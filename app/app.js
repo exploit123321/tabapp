@@ -14,7 +14,7 @@ const SIZES = { pen: [2, 4, 7, 14], marker: [10, 18, 30, 48], eraser: [8, 16, 30
 const OUTSIDE = '#2a2d34';
 
 const settings = Object.assign(
-  { fingerDraws: true, pressure: true, color: COLORS[0], tool: 'pen', size: { pen: 1, marker: 1, eraser: 1 } },
+  { fingerDraws: true, pressure: true, thumbsOpen: true, color: COLORS[0], tool: 'pen', size: { pen: 1, marker: 1, eraser: 1 } },
   safeJSON(localStorage.getItem('framepad.settings'))
 );
 function safeJSON(s) { try { return JSON.parse(s) || {}; } catch { return {}; } }
@@ -80,7 +80,7 @@ function changed() {
   dirty = true;
   requestRender();
   updateUndoButtons();
-  if (!$('#thumbs').hidden) renderThumbs();
+  scheduleThumbs();
   clearTimeout(saveTimer);
   saveTimer = setTimeout(persist, 600);
 }
@@ -503,6 +503,10 @@ window.addEventListener('keydown', (e) => {
   else if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
   else if (doc && doc.mode === 'frames' && e.key === 'ArrowLeft') goFrame(frameIdx - 1);
   else if (doc && doc.mode === 'frames' && e.key === 'ArrowRight') nextFrame();
+  else if (mod || e.altKey) return;
+  else if (e.key >= '1' && e.key <= String(COLORS.length)) setColor(COLORS[+e.key - 1]);
+  else if (doc && doc.mode === 'frames' && e.key.toLowerCase() === 'n') $('#btn-insert').click();
+  else if (doc && doc.mode === 'frames' && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); $('#btn-del').click(); }
   else if (e.key === 'p') setTool('pen');
   else if (e.key === 'h') setTool('marker');
   else if (e.key === 'e') setTool('eraser');
@@ -529,7 +533,7 @@ function frameChanged(structural = false) {
   fitFrame();
   updateFrameUI();
   updateUndoButtons();
-  if (!$('#thumbs').hidden) renderThumbs();
+  scheduleThumbs();
   if (structural) changed();
 }
 function updateFrameUI() {
@@ -603,36 +607,54 @@ function thumbUrl(f) {
   thumbCache.set(f, { strokes: f.strokes, aspect: doc.aspect, url });
   return url;
 }
-function renderThumbs() {
-  const el = $('#thumbs');
-  el.innerHTML = '';
-  doc.frames.forEach((f, i) => {
-    const b = document.createElement('button');
-    b.className = 'th' + (i === frameIdx ? ' active' : '');
-    b.innerHTML = `<img src="${thumbUrl(f)}" alt=""><b>${i + 1}</b>`;
-    b.onclick = () => goFrame(i);
-    el.append(b);
-  });
-  el.querySelector('.active')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+let thumbTimer;
+function scheduleThumbs() {
+  if ($('#thumbs').hidden) return;
+  clearTimeout(thumbTimer);
+  thumbTimer = setTimeout(renderThumbs, 120); // after the stroke, so drawing stays smooth
 }
-$('#btn-thumbs').onclick = () => {
-  const el = $('#thumbs');
-  el.hidden = !el.hidden;
-  $('#btn-thumbs').classList.toggle('active', !el.hidden);
-  if (!el.hidden) renderThumbs();
-  fitFrame();
-};
+function renderThumbs() {
+  if (!doc || doc.mode !== 'frames') return;
+  const list = $('#thumb-list');
+  doc.frames.forEach((f, i) => {
+    let b = list.children[i];
+    if (!b) {
+      b = document.createElement('button');
+      b.className = 'th';
+      b.innerHTML = '<img alt=""><b></b>';
+      b.onclick = () => goFrame([...list.children].indexOf(b));
+      list.append(b);
+    }
+    const url = thumbUrl(f);
+    const img = b.firstElementChild;
+    if (img.getAttribute('src') !== url) img.src = url;
+    b.lastElementChild.textContent = i + 1;
+    b.classList.toggle('active', i === frameIdx);
+  });
+  while (list.children.length > doc.frames.length) list.lastElementChild.remove();
+  list.querySelector('.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+}
+function setThumbsOpen(open, remember = true) {
+  if (remember) { settings.thumbsOpen = open; saveSettings(); }
+  const show = open && doc && doc.mode === 'frames';
+  $('#thumbs').hidden = !show;
+  $('#btn-thumbs').classList.toggle('active', show);
+  if (show) renderThumbs();
+  if (doc && doc.mode === 'frames') fitFrame();
+}
+$('#btn-thumbs').onclick = () => setThumbsOpen($('#thumbs').hidden);
+$('#btn-thumbs-min').onclick = () => setThumbsOpen(false);
 
 // ---------- toolbar ----------
 function buildToolbar() {
   const sw = $('#swatches');
   sw.innerHTML = '';
-  for (const c of COLORS) {
+  for (const [i, c] of COLORS.entries()) {
     const b = document.createElement('button');
     b.className = 'swatch';
     b.style.background = c;
     b.dataset.color = c;
-    b.title = c;
+    b.title = `Colour ${i + 1} (key ${i + 1})`;
     b.onclick = () => setColor(c);
     sw.append(b);
   }
@@ -686,8 +708,8 @@ async function openDoc(d) {
   $('#doc-title').textContent = doc.name;
   const frames = doc.mode === 'frames';
   $('#framebar').hidden = !frames;
-  $('#thumbs').hidden = true;
-  $('#btn-thumbs').classList.remove('active');
+  $('#thumb-list').innerHTML = '';
+  setThumbsOpen(settings.thumbsOpen, false);
   if (frames) {
     fitFrame();
     updateFrameUI();

@@ -1,5 +1,5 @@
 // Network-first so updates show up immediately; cache keeps the app working offline.
-const CACHE = 'framepad-v1';
+const CACHE = 'framepad-v2';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'render.js', 'export.js', 'zip.js', 'store.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {

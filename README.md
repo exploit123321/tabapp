@@ -19,6 +19,18 @@ It's a Progressive Web App: plain HTML/JS with no build step. You install it fro
 
 Touches are ignored while the pen is drawing or hovering (palm rejection). Before a pen is detected, a finger draws. Once the pen is seen, fingers only navigate (you can change this in ⋯ Settings).
 
+## Keyboard
+| Key | Action |
+|---|---|
+| ← / → | Previous / next frame (→ on the last frame adds one) |
+| 1–6 | Colours |
+| N | New frame after the current one |
+| Delete / Backspace | Delete current frame |
+| P / H / E | Pen / highlighter / eraser |
+| Ctrl+Z / Ctrl+Y | Undo / redo |
+
+The frame preview strip at the bottom is open by default and updates after every stroke. Minimize it with ⌄ and reopen it with the strip button in the frame bar.
+
 ## Export
 - **AI pack (.zip)**:
   - `sheets/`: contact sheets with N frames each (default 4), kept at ≤1568 px on the long edge and about 1.15 MP, so vision models don't downscale them.

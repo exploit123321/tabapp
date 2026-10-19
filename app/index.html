@@ -41,23 +41,26 @@
   </header>
 
   <div id="framebar" class="bar" hidden>
-    <button id="btn-thumbs" class="icon" title="Show all frames" aria-label="Show all frames"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="5" height="14" rx="1"/><rect x="10" y="5" width="5" height="14" rx="1"/><rect x="17" y="5" width="4" height="14" rx="1"/></svg></button>
+    <button id="btn-thumbs" class="icon" title="Show / hide frame previews" aria-label="Show or hide frame previews"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="5" height="14" rx="1"/><rect x="10" y="5" width="5" height="14" rx="1"/><rect x="17" y="5" width="4" height="14" rx="1"/></svg></button>
     <button id="btn-onion" class="icon" title="Onion skin: show previous frame faintly" aria-label="Onion skin"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="6"/><circle cx="14" cy="12" r="6" opacity=".45"/></svg></button>
     <span class="sep"></span>
     <button id="btn-prev" class="nav" title="Previous frame (←)" aria-label="Previous frame"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
     <span id="frame-label">1 / 1</span>
     <button id="btn-next" class="nav" title="Next frame (→) — on the last frame adds a new one" aria-label="Next frame"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
     <span class="sep"></span>
-    <button id="btn-insert" class="icon" title="Insert blank frame after this one" aria-label="Insert frame"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button id="btn-insert" class="icon" title="Insert blank frame after this one (N)" aria-label="Insert frame"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
     <button id="btn-dup" class="icon" title="Duplicate frame" aria-label="Duplicate frame"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 4H6a2 2 0 00-2 2v10"/></svg></button>
     <button id="btn-move-l" class="icon" title="Move frame earlier" aria-label="Move frame earlier"><svg viewBox="0 0 24 24"><path d="M11 6l-6 6 6 6M19 12H5"/></svg></button>
     <button id="btn-move-r" class="icon" title="Move frame later" aria-label="Move frame later"><svg viewBox="0 0 24 24"><path d="M13 6l6 6-6 6M5 12h14"/></svg></button>
-    <button id="btn-del" class="icon danger" title="Delete frame" aria-label="Delete frame"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+    <button id="btn-del" class="icon danger" title="Delete frame (Delete)" aria-label="Delete frame"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
     <span class="sep"></span>
     <button id="btn-aspect" class="chip" title="Switch frame shape">16:9</button>
   </div>
 
-  <div id="thumbs" class="bar" hidden></div>
+  <div id="thumbs" class="bar" hidden>
+    <button id="btn-thumbs-min" class="icon" title="Minimize previews" aria-label="Minimize previews"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div id="thumb-list"></div>
+  </div>
 
   <dialog id="dlg-home">
     <h2>FramePad</h2>
@@ -125,7 +128,8 @@
       <b>Pen:</b> draw · <b>side button or eraser end:</b> erase<br>
       <b>One finger:</b> pan · <b>two fingers:</b> pan &amp; zoom<br>
       <b>Two-finger tap:</b> undo · <b>three-finger tap:</b> redo<br>
-      <b>Frames:</b> ◀ ▶ to move, ▶ on the last frame adds a new one
+      <b>Frames:</b> ◀ ▶ to move, ▶ on the last frame adds a new one<br>
+      <b>Keys:</b> ← → frames · 1–6 colours · N new frame · Delete delete frame · P / H / E pen, highlighter, eraser · Ctrl+Z / Ctrl+Y
     </p>
     <div class="row end">
       <button id="btn-fullscreen" class="btn">Toggle full screen</button>
