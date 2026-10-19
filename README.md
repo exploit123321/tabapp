@@ -28,7 +28,6 @@ Touches are ignored while the pen is drawing or hovering (palm rejection). Befor
 | Delete / Backspace | Delete current frame |
 | P / H / E | Pen / highlighter / eraser |
 | Ctrl+Z / Ctrl+Y | Undo / redo |
-
 | V | Voice commands on / off |
 
 ## Voice commands
