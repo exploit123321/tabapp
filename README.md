@@ -29,7 +29,19 @@ Touches are ignored while the pen is drawing or hovering (palm rejection). Befor
 | P / H / E | Pen / highlighter / eraser |
 | Ctrl+Z / Ctrl+Y | Undo / redo |
 
-The frame preview strip at the bottom is open by default and updates after every stroke. Minimize it with ⌄ and reopen it with the strip button in the frame bar.
+| V | Voice commands on / off |
+
+## Voice commands
+Tap the 🎤 button in the top bar (or press V), allow the microphone, then just talk. It uses Chrome's speech recognition, which needs internet and English phrases:
+- "colour 1" … "colour 6", or "black / red / blue / green / orange / white"
+- "undo", "undo 3 times", "redo"
+- "next", "back", "new frame", "delete frame", "duplicate", "frame 5", "first frame", "last frame"
+- "pen", "highlighter", "eraser", "size 1" … "size 4", "bigger", "smaller"
+- "onion on / off", "show / hide previews", "clear frame", "export", "stop listening"
+- Chain commands with "and", e.g. "red and next frame".
+
+The frame preview strip at the bottom is open by default and updates after every stroke. Minimize it with ⌄ and bring it back with **▴ Previews** in the frame bar.
+**Onion skin** shows the previous frame faintly under the current one, so you can line up the next drawing.
 
 ## Export
 - **AI pack (.zip)**:

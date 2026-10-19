@@ -32,6 +32,7 @@
     </div>
 
     <div class="group">
+      <button id="btn-mic" class="icon" title="Voice commands (V)" aria-label="Voice commands" hidden><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></button>
       <button id="btn-undo" class="icon" title="Undo (two-finger tap)" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
       <button id="btn-redo" class="icon" title="Redo (three-finger tap)" aria-label="Redo"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/></svg></button>
       <span class="sep"></span>
@@ -41,8 +42,8 @@
   </header>
 
   <div id="framebar" class="bar" hidden>
-    <button id="btn-thumbs" class="icon" title="Show / hide frame previews" aria-label="Show or hide frame previews"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="5" height="14" rx="1"/><rect x="10" y="5" width="5" height="14" rx="1"/><rect x="17" y="5" width="4" height="14" rx="1"/></svg></button>
-    <button id="btn-onion" class="icon" title="Onion skin: show previous frame faintly" aria-label="Onion skin"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="6"/><circle cx="14" cy="12" r="6" opacity=".45"/></svg></button>
+    <button id="btn-thumbs" class="chip" title="Show the frame previews again" hidden>▴ Previews</button>
+    <button id="btn-onion" class="chip" title="Onion skin: shows the previous frame faintly under this one, so you can line up the next drawing">Onion skin</button>
     <span class="sep"></span>
     <button id="btn-prev" class="nav" title="Previous frame (←)" aria-label="Previous frame"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
     <span id="frame-label">1 / 1</span>
@@ -129,8 +130,19 @@
       <b>One finger:</b> pan · <b>two fingers:</b> pan &amp; zoom<br>
       <b>Two-finger tap:</b> undo · <b>three-finger tap:</b> redo<br>
       <b>Frames:</b> ◀ ▶ to move, ▶ on the last frame adds a new one<br>
-      <b>Keys:</b> ← → frames · 1–6 colours · N new frame · Delete delete frame · P / H / E pen, highlighter, eraser · Ctrl+Z / Ctrl+Y
+      <b>Keys:</b> ← → frames · 1–6 colours · N new frame · Delete delete frame · P / H / E pen, highlighter, eraser · V voice · Ctrl+Z / Ctrl+Y
     </p>
+    <div id="voice-help" hidden>
+      <h3>Voice commands <small>(tap the mic, then just talk — English)</small></h3>
+      <p class="hint">
+        “colour 1” … “colour 6”, or “black / red / blue / green / orange / white”<br>
+        “undo”, “undo 3 times”, “redo”<br>
+        “next”, “back”, “new frame”, “delete frame”, “duplicate”, “frame 5”, “first frame”, “last frame”<br>
+        “pen”, “highlighter”, “eraser”, “size 1” … “size 4”, “bigger”, “smaller”<br>
+        “onion on / off”, “show / hide previews”, “clear frame”, “export”, “stop listening”<br>
+        Chain them: “red and next frame”.
+      </p>
+    </div>
     <div class="row end">
       <button id="btn-fullscreen" class="btn">Toggle full screen</button>
       <button id="btn-fit" class="btn">Reset view</button>
