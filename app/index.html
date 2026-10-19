@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#16181d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>FramePad</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <header id="topbar" class="bar">
+    <div class="group">
+      <button id="btn-home" class="icon" title="Documents" aria-label="Documents"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <button id="doc-title" class="title" title="Rename"></button>
+      <span id="pen-status" class="pill" hidden>✎ Pen</span>
+    </div>
+
+    <div class="group" id="tools">
+      <button class="icon tool" data-tool="pen" title="Pen" aria-label="Pen"><svg viewBox="0 0 24 24"><path d="M4 20l1-5L16 4l4 4L9 19z"/><path d="M14 6l4 4"/></svg></button>
+      <button class="icon tool" data-tool="marker" title="Highlighter" aria-label="Highlighter"><svg viewBox="0 0 24 24"><path d="M9 15l-4 5h6l2-2"/><path d="M9 15l8-11 4 3-8 11z"/></svg></button>
+      <button class="icon tool" data-tool="eraser" title="Eraser (or pen side button / eraser end)" aria-label="Eraser"><svg viewBox="0 0 24 24"><path d="M8 20h12"/><path d="M4 15l9-10 7 7-8 8H9z"/><path d="M9 10l6 6"/></svg></button>
+      <span class="sep"></span>
+      <div id="swatches"></div>
+      <label class="swatch custom" title="Custom colour"><input id="color-input" type="color" value="#7a3cff"></label>
+      <span class="sep"></span>
+      <div id="sizes"></div>
+    </div>
+
+    <div class="group">
+      <button id="btn-undo" class="icon" title="Undo (two-finger tap)" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
+      <button id="btn-redo" class="icon" title="Redo (three-finger tap)" aria-label="Redo"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/></svg></button>
+      <span class="sep"></span>
+      <button id="btn-export" class="primary" title="Export">Export</button>
+      <button id="btn-more" class="icon" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+    </div>
+  </header>
+
+  <div id="framebar" class="bar" hidden>
+    <button id="btn-thumbs" class="icon" title="Show all frames" aria-label="Show all frames"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="5" height="14" rx="1"/><rect x="10" y="5" width="5" height="14" rx="1"/><rect x="17" y="5" width="4" height="14" rx="1"/></svg></button>
+    <button id="btn-onion" class="icon" title="Onion skin: show previous frame faintly" aria-label="Onion skin"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="6"/><circle cx="14" cy="12" r="6" opacity=".45"/></svg></button>
+    <span class="sep"></span>
+    <button id="btn-prev" class="nav" title="Previous frame (←)" aria-label="Previous frame"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <span id="frame-label">1 / 1</span>
+    <button id="btn-next" class="nav" title="Next frame (→) — on the last frame adds a new one" aria-label="Next frame"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+    <span class="sep"></span>
+    <button id="btn-insert" class="icon" title="Insert blank frame after this one" aria-label="Insert frame"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button id="btn-dup" class="icon" title="Duplicate frame" aria-label="Duplicate frame"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 4H6a2 2 0 00-2 2v10"/></svg></button>
+    <button id="btn-move-l" class="icon" title="Move frame earlier" aria-label="Move frame earlier"><svg viewBox="0 0 24 24"><path d="M11 6l-6 6 6 6M19 12H5"/></svg></button>
+    <button id="btn-move-r" class="icon" title="Move frame later" aria-label="Move frame later"><svg viewBox="0 0 24 24"><path d="M13 6l6 6-6 6M5 12h14"/></svg></button>
+    <button id="btn-del" class="icon danger" title="Delete frame" aria-label="Delete frame"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+    <span class="sep"></span>
+    <button id="btn-aspect" class="chip" title="Switch frame shape">16:9</button>
+  </div>
+
+  <div id="thumbs" class="bar" hidden></div>
+
+  <dialog id="dlg-home">
+    <h2>FramePad</h2>
+    <div class="new-row">
+      <button data-new="frames:16:9" class="card"><span class="shape s169"></span>Frames 16:9</button>
+      <button data-new="frames:9:16" class="card"><span class="shape s916"></span>Frames 9:16</button>
+      <button data-new="board" class="card"><span class="shape board"></span>Big board</button>
+    </div>
+    <h3>Your documents</h3>
+    <ul id="doc-list"></ul>
+    <div class="row end">
+      <label class="btn">Import backup<input id="import-input" type="file" accept=".json,application/json" hidden></label>
+      <button id="home-close" class="btn">Close</button>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-export">
+    <h2>Export</h2>
+    <div id="export-frames">
+      <section>
+        <h3>AI pack <small>(.zip — best for showing an AI)</small></h3>
+        <p>Contact sheets sized so a vision model sees every frame clearly, every frame at full resolution with its number burned in, the strip, and a <code>SEQUENCE.md</code> that spells out the order.</p>
+        <div class="row">
+          <label>Frames per sheet
+            <select id="per-sheet"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>6</option><option>9</option></select>
+          </label>
+          <button id="exp-ai" class="primary">Download AI pack</button>
+          <button id="exp-share" class="btn" hidden>Share sheets…</button>
+        </div>
+      </section>
+      <section>
+        <h3>Strip <small>(.png)</small></h3>
+        <p>All frames in one long image, numbered with arrows. If it's too big for one image it is split into consecutive parts.</p>
+        <div class="row">
+          <label>Layout
+            <select id="strip-dir"><option value="auto">Auto</option><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option><option value="grid">Grid</option></select>
+          </label>
+          <button id="exp-strip" class="primary">Download strip</button>
+        </div>
+      </section>
+      <section>
+        <h3>This frame</h3>
+        <div class="row"><button id="exp-frame" class="btn">Download current frame</button></div>
+      </section>
+    </div>
+    <div id="export-board">
+      <section>
+        <h3>Board image <small>(.png)</small></h3>
+        <div class="row"><button id="exp-board" class="primary">Download board</button><button id="exp-board-share" class="btn" hidden>Share…</button></div>
+      </section>
+    </div>
+    <section>
+      <h3>Backup</h3>
+      <div class="row"><button id="exp-json" class="btn">Download project (.json)</button></div>
+    </section>
+    <div id="export-progress" hidden><div></div></div>
+    <div class="row end"><button id="export-close" class="btn">Close</button></div>
+  </dialog>
+
+  <dialog id="dlg-settings">
+    <h2>Settings</h2>
+    <label class="check"><input type="checkbox" id="set-finger"> Finger draws (turn off to use fingers only for pan / zoom — switches off automatically when the pen is detected)</label>
+    <label class="check"><input type="checkbox" id="set-pressure" checked> Pen pressure</label>
+    <p class="hint">
+      <b>Pen:</b> draw · <b>side button or eraser end:</b> erase<br>
+      <b>One finger:</b> pan · <b>two fingers:</b> pan &amp; zoom<br>
+      <b>Two-finger tap:</b> undo · <b>three-finger tap:</b> redo<br>
+      <b>Frames:</b> ◀ ▶ to move, ▶ on the last frame adds a new one
+    </p>
+    <div class="row end">
+      <button id="btn-fullscreen" class="btn">Toggle full screen</button>
+      <button id="btn-fit" class="btn">Reset view</button>
+      <button id="settings-close" class="btn">Close</button>
+    </div>
+  </dialog>
+
+  <div id="toast" hidden></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
