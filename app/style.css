@@ -9,6 +9,8 @@
   color-scheme: dark;
 }
 
+[hidden] { display: none !important; }
+
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body {
@@ -69,7 +71,9 @@ button.icon, button.nav {
 }
 button svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 button.icon:active, button.nav:active, .btn:active { background: #ffffff1a; }
-button.icon.active { background: var(--accent); color: #fff; }
+button.icon.active, .chip.active { background: var(--accent); color: #fff; }
+#btn-mic.active { background: var(--danger); color: #fff; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px #ff5d6844; } }
 button.danger { color: var(--danger); }
 button:disabled { opacity: .35; }
 
@@ -80,7 +84,7 @@ button.nav.add { background: var(--accent); }
 .title { padding: 8px 10px; font-weight: 600; max-width: 30vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .primary { background: var(--accent); color: #fff; padding: 10px 16px; font-weight: 600; border-radius: 12px; }
 .btn { display: inline-flex; align-items: center; padding: 10px 14px; background: #2d313b; }
-.chip { padding: 8px 12px; background: #2d313b; font-weight: 600; }
+.chip { padding: 8px 12px; white-space: nowrap; min-height: 44px; background: #2d313b; font-weight: 600; }
 .pill { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: #1f6f43; color: #c8f7d8; }
 
 #swatches, #sizes { display: flex; gap: 4px; }
@@ -101,6 +105,9 @@ button.nav.add { background: var(--accent); }
   left: 50%;
   transform: translateX(-50%);
   padding: 6px 10px;
+  max-width: calc(100vw - 20px);
+  flex-wrap: wrap;
+  justify-content: center;
 }
 #frame-label { min-width: 84px; text-align: center; font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
 
@@ -112,7 +119,7 @@ button.nav.add { background: var(--accent); }
 #thumb-list { display: flex; gap: 10px; overflow-x: auto; touch-action: pan-x; flex: 1; padding: 4px 2px; }
 #thumbs .th { flex: none; position: relative; border-radius: 8px; overflow: hidden; border: 2px solid transparent; padding: 0; background: #fff; }
 #thumbs .th.active { border-color: var(--accent); }
-#thumbs .th img { display: block; height: 96px; }
+#thumbs .th canvas { display: block; }
 #thumbs .th b { position: absolute; left: 0; top: 0; background: #1f2430; color: #fff; font-size: 12px; padding: 1px 6px; border-bottom-right-radius: 6px; }
 
 dialog {

@@ -1,6 +1,7 @@
 import { FRAME_SIZES, PAPER, BOARD_PAPER, drawStroke, drawStrokes, hitStroke, renderFrame } from './render.js';
 import { exportStrip, exportAiPack, exportBoard, toBlob, safeName } from './export.js';
 import { saveDoc, loadDoc, deleteDoc, listDocs } from './store.js';
+import { parseCommands, createVoice, voiceSupported } from './voice.js';
 
 const $ = (s) => document.querySelector(s);
 const canvas = $('#canvas');
@@ -101,6 +102,7 @@ window.addEventListener('pagehide', () => persist());
 // ---------- view ----------
 function resize() {
   dpr = Math.min(window.devicePixelRatio || 1, 3);
+  $('#toast').style.top = `${$('#topbar').getBoundingClientRect().bottom + 10}px`;
   for (const c of [canvas, cache]) {
     c.width = Math.round(innerWidth * dpr);
     c.height = Math.round(innerHeight * dpr);
@@ -114,6 +116,9 @@ window.addEventListener('resize', resize);
 function fitFrame() {
   const { w, h } = frameSize();
   const top = $('#topbar').getBoundingClientRect().bottom + 14;
+  // The frame bar can wrap onto two rows on narrow screens; keep the strip just above it.
+  const fb = $('#framebar').getBoundingClientRect();
+  $('#thumbs').style.bottom = `${innerHeight - fb.top + 8}px`;
   const below = $('#thumbs').hidden ? $('#framebar') : $('#thumbs');
   const bottom = innerHeight - below.getBoundingClientRect().top + 14;
   const availW = innerWidth - 40;
@@ -507,6 +512,7 @@ window.addEventListener('keydown', (e) => {
   else if (e.key >= '1' && e.key <= String(COLORS.length)) setColor(COLORS[+e.key - 1]);
   else if (doc && doc.mode === 'frames' && e.key.toLowerCase() === 'n') $('#btn-insert').click();
   else if (doc && doc.mode === 'frames' && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); $('#btn-del').click(); }
+  else if (e.key.toLowerCase() === 'v') toggleVoice();
   else if (e.key === 'p') setTool('pen');
   else if (e.key === 'h') setTool('marker');
   else if (e.key === 'e') setTool('eraser');
@@ -582,7 +588,7 @@ const moveFrame = (d) => {
 };
 $('#btn-move-l').onclick = () => moveFrame(-1);
 $('#btn-move-r').onclick = () => moveFrame(1);
-$('#btn-onion').onclick = () => { onion = !onion; updateFrameUI(); dirty = true; requestRender(); };
+$('#btn-onion').onclick = () => setOnion(!onion);
 $('#btn-aspect').onclick = () => {
   const from = FRAME_SIZES[doc.aspect];
   doc.aspect = doc.aspect === '16:9' ? '9:16' : '16:9';
@@ -597,37 +603,52 @@ $('#btn-aspect').onclick = () => {
   frameChanged(true);
 };
 
-// Thumbnails
-const thumbCache = new WeakMap(); // frame -> { strokes, url }
-function thumbUrl(f) {
-  const c = thumbCache.get(f);
-  if (c && c.strokes === f.strokes && c.aspect === doc.aspect) return c.url;
-  const { h } = frameSize();
-  const url = renderFrame(f, doc.aspect, 192 / h).toDataURL('image/png');
-  thumbCache.set(f, { strokes: f.strokes, aspect: doc.aspect, url });
-  return url;
+// Thumbnails: each preview is a small canvas redrawn whenever its frame's strokes change.
+const THUMB_H = 96;
+function drawThumb(cv, f) {
+  if (cv._frame === f && cv._strokes === f.strokes && cv._aspect === doc.aspect) return;
+  const { w, h } = frameSize();
+  const r = Math.min(window.devicePixelRatio || 1, 2);
+  const cw = Math.round((THUMB_H * w) / h);
+  cv.style.width = `${cw}px`;
+  cv.style.height = `${THUMB_H}px`;
+  cv.width = Math.round(cw * r);
+  cv.height = Math.round(THUMB_H * r);
+  const c = cv.getContext('2d');
+  const k = cv.height / h;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.fillStyle = PAPER;
+  c.fillRect(0, 0, cv.width, cv.height);
+  c.setTransform(k, 0, 0, k, 0, 0);
+  c.beginPath();
+  c.rect(0, 0, w, h);
+  c.clip();
+  // Keep thin lines visible at thumbnail size.
+  const minW = 1.2 / k;
+  drawStrokes(c, f.strokes.map((st) => (st.w >= minW ? st : { ...st, w: minW })));
+  cv._frame = f;
+  cv._strokes = f.strokes;
+  cv._aspect = doc.aspect;
 }
 let thumbTimer;
 function scheduleThumbs() {
   if ($('#thumbs').hidden) return;
   clearTimeout(thumbTimer);
-  thumbTimer = setTimeout(renderThumbs, 120); // after the stroke, so drawing stays smooth
+  thumbTimer = setTimeout(renderThumbs, 80); // right after the stroke, so drawing stays smooth
 }
 function renderThumbs() {
-  if (!doc || doc.mode !== 'frames') return;
+  if (!doc || doc.mode !== 'frames' || $('#thumbs').hidden) return;
   const list = $('#thumb-list');
   doc.frames.forEach((f, i) => {
     let b = list.children[i];
     if (!b) {
       b = document.createElement('button');
       b.className = 'th';
-      b.innerHTML = '<img alt=""><b></b>';
+      b.innerHTML = '<canvas></canvas><b></b>';
       b.onclick = () => goFrame([...list.children].indexOf(b));
       list.append(b);
     }
-    const url = thumbUrl(f);
-    const img = b.firstElementChild;
-    if (img.getAttribute('src') !== url) img.src = url;
+    drawThumb(b.firstElementChild, f);
     b.lastElementChild.textContent = i + 1;
     b.classList.toggle('active', i === frameIdx);
   });
@@ -638,11 +659,11 @@ function setThumbsOpen(open, remember = true) {
   if (remember) { settings.thumbsOpen = open; saveSettings(); }
   const show = open && doc && doc.mode === 'frames';
   $('#thumbs').hidden = !show;
-  $('#btn-thumbs').classList.toggle('active', show);
+  $('#btn-thumbs').hidden = show; // the "Previews" button only shows while the strip is minimized
   if (show) renderThumbs();
   if (doc && doc.mode === 'frames') fitFrame();
 }
-$('#btn-thumbs').onclick = () => setThumbsOpen($('#thumbs').hidden);
+$('#btn-thumbs').onclick = () => setThumbsOpen(true);
 $('#btn-thumbs-min').onclick = () => setThumbsOpen(false);
 
 // ---------- toolbar ----------
@@ -876,6 +897,83 @@ $('#exp-board-share').onclick = (e) => busy(e.target, async () => {
   await navigator.share({ files: [new File([r.blob], r.name, { type: 'image/png' })], title: doc.name }).catch(() => {});
 });
 $('#exp-json').onclick = () => download(new Blob([JSON.stringify(doc)], { type: 'application/json' }), `${safeName(doc.name)}.framepad.json`);
+
+// ---------- voice ----------
+function setOnion(on) { onion = on; updateFrameUI(); dirty = true; requestRender(); }
+function stepSize(d) {
+  const t = settings.tool;
+  settings.size[t] = Math.max(0, Math.min(SIZES[t].length - 1, settings.size[t] + d));
+  saveSettings();
+  buildSizes();
+}
+const framesOnly = () => doc.mode === 'frames';
+
+// Returns a short description of what was done, or null if not applicable.
+function runCommand(c) {
+  switch (c.cmd) {
+    case 'color':
+      if (c.n < 1 || c.n > COLORS.length) return null;
+      setColor(COLORS[c.n - 1]);
+      return `colour ${c.n}`;
+    case 'size':
+      if (c.n < 1 || c.n > 4) return null;
+      settings.size[settings.tool] = c.n - 1; saveSettings(); buildSizes();
+      return `size ${c.n}`;
+    case 'sizeStep': stepSize(c.n); return c.n > 0 ? 'bigger' : 'smaller';
+    case 'undo': for (let i = 0; i < c.n; i++) undo(); return c.n > 1 ? `undo ×${c.n}` : 'undo';
+    case 'redo': for (let i = 0; i < c.n; i++) redo(); return c.n > 1 ? `redo ×${c.n}` : 'redo';
+    case 'tool': setTool(c.tool); return { pen: 'pen', marker: 'highlighter', eraser: 'eraser' }[c.tool];
+    case 'next': if (!framesOnly()) return 'only works in frame mode'; nextFrame(); return `frame ${frameIdx + 1}`;
+    case 'prev': if (!framesOnly()) return 'only works in frame mode'; goFrame(frameIdx - 1); return `frame ${frameIdx + 1}`;
+    case 'goto': {
+      if (!framesOnly()) return 'only works in frame mode';
+      const n = Math.min(doc.frames.length, c.n);
+      if (n < 1) return null;
+      goFrame(n - 1);
+      return `frame ${n}`;
+    }
+    case 'insert': if (!framesOnly()) return 'only works in frame mode'; $('#btn-insert').click(); return `new frame ${frameIdx + 1}`;
+    case 'delete': if (!framesOnly()) return 'only works in frame mode'; $('#btn-del').click(); return 'delete frame';
+    case 'duplicate': if (!framesOnly()) return 'only works in frame mode'; $('#btn-dup').click(); return 'duplicate';
+    case 'onion': if (!framesOnly()) return 'only works in frame mode'; setOnion(c.on == null ? !onion : c.on); return `onion skin ${onion ? 'on' : 'off'}`;
+    case 'previews': if (!framesOnly()) return 'only works in frame mode'; setThumbsOpen(c.on); return c.on ? 'show previews' : 'hide previews';
+    case 'clear': if (!page().strokes.length) return null; setStrokes([]); return 'cleared (say “undo” to bring it back)';
+    case 'export': $('#btn-export').click(); return 'export';
+    case 'fit': $('#btn-fit').click(); return 'reset view';
+    case 'stopVoice': voice.stop(); return 'voice off';
+  }
+  return null;
+}
+
+function onPhrase(alternatives) {
+  if (live) return; // never act mid-stroke
+  // Use the first recognition alternative that contains a command.
+  for (const text of alternatives) {
+    const cmds = parseCommands(text);
+    if (!cmds.length) continue;
+    const done = cmds.map(runCommand).filter(Boolean);
+    if (done.length) { toast(`🎤 “${text}” → ${done.join(', ')}`); return; }
+  }
+  toast(`🎤 didn’t catch a command in “${alternatives[0] || '…'}”`);
+}
+
+const voice = createVoice({
+  onPhrase,
+  onState(on, err) {
+    $('#btn-mic').classList.toggle('active', on || (voice && voice.listening));
+    if (err === 'not-allowed' || err === 'service-not-allowed') toast('Microphone blocked — allow it for this site in Chrome settings');
+    else if (err) toast(`Voice stopped (${err})`);
+  },
+});
+function toggleVoice() {
+  if (!voice) return toast('Voice commands are not supported in this browser');
+  if (voice.listening) { voice.stop(); toast('Voice off'); }
+  else { voice.start(); toast('🎤 Listening — try “colour 2”, “undo”, “next”'); }
+  $('#btn-mic').classList.toggle('active', voice.listening);
+}
+$('#btn-mic').hidden = !voiceSupported;
+$('#voice-help').hidden = !voiceSupported;
+$('#btn-mic').onclick = toggleVoice;
 
 // ---------- settings ----------
 $('#btn-more').onclick = () => {
